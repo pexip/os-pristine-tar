@@ -1,0 +1,94 @@
+# ${cur} must be provided by caller
+_pristine_tar_listing () {
+  local kind="${1}" # either 'asc' or 'id'
+  local dirname="${cur%/*}"
+  local within_root=no
+
+  [[ "${cur:0:1}" = '/' && ! "${dirname}" ]] && within_root=yes
+  [[ "${dirname}" = "${cur}" ]] && dirname=''
+
+  # As far as I can observe (without digging into sources), there are
+  # only three possible extensions of files -- .id .asc .delta
+  # -- Dmitry Bogatov <KAction@gnu.org> Wed, 24 Oct 2018 02:53:18 +0000
+  local possibilities=''
+  for name in $(git ls-tree --name-only pristine-tar) ; do
+    [[ "${name##*.}" = "${kind}" ]] || continue
+    [[ "${kind}" = 'id' ]] && name="${name%.id}"
+
+    [[ "${dirname}" ]] && name="${dirname}/${name}"
+    [[ "${within_root}" = yes ]] && name="/${name}"
+
+    possibilities="${possibilities} ${name}"
+  done
+  COMPREPLY+=( $(compgen -W "${possibilities}" -- "${cur}") )
+}
+
+_pristine_tar()
+{
+  local options='
+    --verbose
+    --debug
+    --message
+    --signature-file
+    --recompress
+    --recompress-threhold-bytes
+    --recompress-threhold-percent
+  '
+  local subcommands='
+    gendelta
+    gentar
+    commit
+    checkout
+    verify
+    list
+  '
+  COMPREPLY=()
+  _get_comp_words_by_ref -n : cur prev
+  #cur=`_get_cword :`
+  #prev=`_get_pword`
+
+  if [[ "$cur" == -* ]]; then
+    COMPREPLY=( $( compgen -W "${options}" -- "$cur" ) )
+    return 0
+  fi
+
+  if [[ "${COMP_CWORD}" = 1 ]]; then
+    COMPREPLY=( $( compgen -W "${subcommands}" -- "$cur" ))
+    return 0
+  fi
+
+  # Sub-command 'checkout' is special -- its argument specify something
+  # (either tarball or signature) already stored on pristine-tar branch.
+  local subcommand="${COMP_WORDS[1]}"
+  case "${prev}" in
+    (-m|--message) return 0 ;;
+    (-B|--recompress-threhold-bytes) return 0 ;;
+    (-P|--recompress-threhold-percent) return 0 ;;
+    (-s|--signature-file)
+      if [[ "${subcommand}" = 'checkout' ]] ; then
+        _pristine_tar_listing 'asc'
+      else
+        for e in asc gpg pgp sig ; do
+          _filedir "${e}"
+        done
+      fi
+      return 0
+  esac
+
+  if [[ "${subcommand}" = 'checkout' ]] ; then
+    _pristine_tar_listing 'id'
+  elif [[ "${subcommand}" = 'commit' && "${cur}" = refs/* ]] ; then
+    # 'commit' sub-command has two positional arguments, which has
+    # vastly diffent meaning. First one is filename, and second one is
+    # Git ref. Finding out, which one we are completing is rather
+    # complicated, so instead strings starting with 'refs/' are
+    # completed as Git references, and as filenames otherwise.
+    local references="$(git show-ref | cut -d' ' -f2)"
+    COMPREPLY+=( $(compgen -W "${references}" -- "${cur}") )
+  else
+    _filedir
+  fi
+} &&
+complete -F _pristine_tar pristine-tar
+
+# vim: ft=sh

@@ -1,0 +1,43 @@
+#!/bin/sh
+
+exec 2>&1
+
+set -eu
+
+TESTS_REPO=https://salsa.debian.org/debian/pristine-tar-tests.git
+
+if [ -z "${AUTOPKGTEST_TMP:-}" ]; then
+    AUTOPKGTEST_TMP="$(mktemp -d)"
+    trap "rm -rf $AUTOPKGTEST_TMP" INT TERM EXIT
+fi
+
+set -x
+
+cd "$AUTOPKGTEST_TMP"
+cf=no
+git clone "${TESTS_REPO}" || cf=yes
+if [ "$cf" = yes ]; then
+    echo "W: Could not clone testcases repository; skipping regression tests"
+    exit 77
+fi
+
+cd pristine-tar-tests
+last=$(ls -1 history/*.yaml | sort -V | tail -1)
+pass_last=$(grep -c 'status: PASS' "${last}")
+rc=0
+mispipe ./testall 'tee data.yaml' || rc=$?
+pass=$(grep -c 'status: PASS' data.yaml)
+
+if [ "${pass}" -lt "${pass_last}" ]; then
+    echo "E: regressions found: ${pass} tests passes, versus ${pass_last} in ${last}"
+    rc=1
+fi
+
+# Log difference from the last
+diff -u "$last" data.yaml || true
+
+if [ -n "${AUTOPKGTEST_ARTIFACTS:-}" ]; then
+    cp data.yaml "$AUTOPKGTEST_ARTIFACTS"/
+fi
+
+exit $rc
