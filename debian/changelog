@@ -1,3 +1,9 @@
+pristine-tar (1.48pexip1) pexip; urgency=medium
+
+  * Prepare Pexip packaging
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Wed, 29 Jul 2020 11:27:36 +0000
+
 pristine-tar (1.48) unstable; urgency=medium
 
   [ Debian Janitor ]
