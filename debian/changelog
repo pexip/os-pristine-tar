@@ -1,3 +1,11 @@
+pristine-tar (1.49) unstable; urgency=medium
+
+  [ Steve McIntyre ]
+  * Add an extra tarball retry step without --verbatim-files-from
+    (Closes: #933031)
+
+ -- Antonio Terceiro <terceiro@debian.org>  Sun, 02 Aug 2020 10:45:39 -0300
+
 pristine-tar (1.48) unstable; urgency=medium
 
   [ Debian Janitor ]
