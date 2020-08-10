@@ -1,3 +1,17 @@
+pristine-tar (1.49pexip1) pexip; urgency=medium
+
+  * New upstream release
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com> Mon, 10 Aug 2020 16:59:40 +0100
+
+pristine-tar (1.49) unstable; urgency=medium
+
+  [ Steve McIntyre ]
+  * Add an extra tarball retry step without --verbatim-files-from
+    (Closes: #933031)
+
+ -- Antonio Terceiro <terceiro@debian.org>  Sun, 02 Aug 2020 10:45:39 -0300
+
 pristine-tar (1.48pexip1) pexip; urgency=medium
 
   * Prepare Pexip packaging
